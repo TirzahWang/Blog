@@ -1,0 +1,210 @@
+ $('form').on('submit', function () {
+            //阻止表单提交的默认行为
+            return false
+        })
+        
+
+jQuery提供获取表单输入内容的一个方法：
+        $('form').serializeArray()  来获取到表单中用户输入的内容
+            返回一个存储对象的数组，对象个数就是表单里提交的内容，对象里有两个属性：name、value
+            /name的值就是表单里的name值，value的值就是用户在当前name表单里输入的值
+
+判断用户输入的内容为空
+        if(result.email.trim().length==0){}
+        去掉空格后的内容为0，调用trim（）方法 
+
+客户端在发送请求时，请求格式出现错误时，状态码一般设置为400
+
+密码加密：
+    第三方模块：bcrypt哈希密码
+        哈希加密是单程加密方式：1234 => abcd（只能加密不能解密）
+        在加密的密码中加入随机字符串可以增加密码被破解的难度。
+
+            // 导入bcrypt模块
+            const bcrypt = require('bcrypt');
+            // 生成随机字符串 gen => generate 生成 salt 盐,接受一个数值做参数
+            //数值越大，生成的随机字符串复杂度越高，默认值是10,返回一个随机生成的字符串
+             let salt = await bcrypt.genSalt(10);
+
+            // 使用随机字符串对密码进行加密,调用hash方法，返回加密后的密码
+            let pass = await bcrypt.hash('明文密码', salt);
+
+            // 密码比对(异步API) 返回布尔值
+            let isEqual = await bcrypt.compare('用户输入的密码', '加密密码');
+
+                bcrypt依赖的其他环境
+                1. python 2.x
+                2. node-gyp
+                    npm install -g node-gyp
+                3. windows-build-tools
+                    npm install --global --production windows-build-tools
+
+cookie与session：
+        cookie：浏览器在电脑硬盘中开辟的一块空间，主要供服务器端存储数据。
+        cookie中的数据是以域名的形式进行区分的。
+        cookie中的数据是有过期时间的，超过时间数据会被浏览器自动删除。
+        cookie中的数据会随着请求被自动发送到服务器端。
+
+    session：实际上就是一个对象，存储在服务器端的内存中，在session对象中也可以存储多条数据，每一条数据都有一个sessionid做为唯一标识。
+
+    在node.js中需要借助eaxpress-session实现session功能。
+    const session = require('express-session');
+    app.use(session({
+         secret: 'secret key' ，
+         saveUninitialized: false, 不保存未初始化的cookie
+         cookie: {
+        maxAge: 24 * 60 * 60 * 1000
+    }        cookie有效时间，毫秒
+         }));
+
+    删除session
+    req.session.destroy(function () {
+        // 删除cookie ,传递的参数是要删除cookie的名字
+        res.clearCookie('connect.sid')
+        // 重定向到用户登录页面
+        res.redirect('/admin/login')
+    })
+
+Joi 
+    JavaScript对象的规则描述语言和验证器。
+        const Joi = require('joi');
+        const schema = {
+            username: Joi.string().alphanum().min(3).max(30).required().error(new Error(‘错误信息’)),
+            password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/),
+            access_token: [Joi.string(), Joi.number()],
+            birthyear: Joi.number().integer().min(1900).max(2013),
+            email: Joi.string().email()
+            //vaild()方法，合法的，传递参数为用户必须在其中选择的项目
+            role:joi.string().valid('normal','admin')
+        };
+        Joi.validate({ username: 'abc', birthyear: 1994 }, schema);
+
+
+express里的重定向：
+    不需要使用readHead
+    使用res.redirect（'跳转的地址'）
+    eg: 使用res.redirect（'/admin/user'）
+
+公共信息存储
+     app.locals.userInfo = user
+
+
+选择框状态
+    <select class="form-control" name="state">
+        <option value="0"  {{user && user.state == 0 ? 'selected': ''}}>启用</option>
+        <option value="1"  {{user && user.role == 1 ? 'selected': ''}}>禁用</option>
+    </select>
+
+对于文件上传的表单，必须以二进制的方式传递到服务器：
+    form标签里添加 enctype，来指定表单的编码，
+        默认值：application/x-www-form-urlencoded
+                例如：把数据编写成name=zhangsan&age=18然后传递服务器端
+        二进制：multipart/form-data 将表单数据编写成二进制后传递给服务器
+                body-parser只能处理客户端传递的普通信息，不能处理二进制信息，
+                需要用到formidable第三方模块，可接受post、get和文件上传参数
+                     // 引入formidable模块
+                        const formidable = require('formidable');
+                        // 创建表单解析对象
+                        const form = new formidable.IncomingForm();
+                        // 设置接受到文件后的上传路径(绝对路径)
+                        form.uploadDir = "/my/dir";
+                        // 是否保留表单上传文件的扩展名
+                        form.keepExtensions = true;
+                        // 对表单进行解析
+                        form.parse(req, (err, fields, files) => {
+                            // err是错误信息对象，fields 存储普通请求参数，对象类型，files 存储上传的文件信息，对象类型
+                        });
+表单允许用户选择多个文件：
+    表单添加multiple属性
+
+文件读取：
+    在页面中读取文件，并将读取的文件显示在页面当中
+   JavaScript提供了内置构造函数来读取文件，可以读取二进制文件
+         var reader = new FileReader();
+         //这是个异步函数，不能直接拿到返回结果，需要添加监听事件;input.files表示用户选择的文件列表，是一个数组
+        reader.readAsDataURL(input.files); 
+        reader.onload = function () {
+            console.log(reader.result); 
+        }
+
+数据分页 mongoose-sex-page
+    const pagination = require('mongoose-sex-page');
+    pagination(集合构造函数).page(1) .size(20) .display(8) .exec();
+        page:当前页，
+        size：每页显示数据条数
+        total：总数据条数
+        records：[查询出来的具体数据]
+        pages：总共的页数
+        display：客户端显示的页码数
+        exec：向数据库发送查询请求
+
+mongoDB数据库添加账号
+        1. 以系统管理员的方式运行powershell
+        2. 连接数据库 mongo
+        3. 查看数据库 show dbs
+        4. 切换到admin数据库 use admin
+        mongodb://myblog:myblog@localhost:27017/blog
+        5. 创建超级管理员账户 db.createUser({user:'tirzah',pwd:'tirzah',roles:['root']})
+        6. 切换到blog数据 use blog
+        7. 创建普通账号 db.createUser({user:'myblog',pwd:'myblog',roles:['readWrite']})
+        8. 卸载mongodb服务
+                1. 停止服务 net stop mongodb
+                2. mongod --remove
+        9. 创建mongodb服务
+          mongod --logpath="C:\Program Files\MongoDB\Server\4.1\log\mongod.log" --dbpath="C:\Program          Files\MongoDB\Server\4.1\data" --install –-auth
+        10. 启动mongodb服务 net start mongodb
+        11. 在项目中使用账号连接数据库
+                mongoose.connect('mongodb://user:pass@localhost:port/database')
+
+
+开发环境与生产环境
+        环境，就是指项目运行的地方，当项目处于开发阶段，项目运行在开发人员的电脑上，项目所处的环境就是开发环境。
+        当项目开发完成以后，要将项目放到真实的网站服务器电脑中运行，项目所处的环境就是生产环境。
+
+        因为在不同的环境中，项目的配置是不一样的，需要在项目代码中判断当前项目运行的环境，
+         根据不同的环境应用不同的项目配置。
+
+    通过电脑操作系统中的系统环境变量区分当前是开发环境还是生产环境。
+        系统环境变量中，新添加：变量名：NODE_ENV  变量值：development  为设置开发环境
+        系统环境变量中，新添加：变量名：NODE_ENV  变量值：production  为设置生产环境
+
+    在全局js文件中判断
+        if (process.env.NODE_ENV == 'development') {
+        // 开发环境
+        } else {
+            // 生产环境
+        }
+
+第三方模块config
+        作用：允许开发人员将不同运行环境下的应用配置信息抽离到单独的文件中，模块内部自动判断当前应用的运行环境，
+    并读取对应的配置信息，极大提供应用配置信息的维护成本，避免了当运行环境重复的多次切换时，手动到项目代码
+    中修改配置信息
+
+    使用步骤
+            1.使用npm install config命令下载模块
+            2.在项目的根目录下新建config文件夹
+            3.在config文件夹下面新建default.json(存放默认的配置信息)、development.json（存放开发环境下的配置信息）、production.json（存放生产环境下的配置信息）文件
+            4.在项目中通过require方法，将模块进行导入
+            5.使用模块内部提供的get方法获取配置信息
+
+    将敏感配置信息存储在环境变量中
+        1.在config文件夹中建立custom-environment-variables.json文件
+        2.配置项属性的值填写系统环境变量的名字
+        3.项目运行时config模块查找系统环境变量，并读取其值作为当前配置项属于的值
+               eg，development环境下: 系统环境变量中：新添加：变量名：APP_PWD  变量值：密码  
+                    在development.json文件中编辑
+                        {
+                            "db": {
+                                "user": "myblog",
+                                "host": "localhost",
+                                "port": "27017",
+                                "name": "blog"
+                            }
+                        }
+                    在custom-environment-variables.json文件中编辑
+                        { 
+                            "db": {
+                                "pwd": "APP_PWD"
+                            }
+                        }
+

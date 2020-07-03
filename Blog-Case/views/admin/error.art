@@ -1,0 +1,23 @@
+{{extend './commom/layout.art'}}
+{{block 'main'}}
+<p class="bg-danger error">{{msg}}</p>
+<p style="margin-left: 500px; font-size: 20px; margin-top: 30px;">页面将在<span style="color: tomato;"
+        id="text"></span>秒钟后自动跳转......</p>
+{{/block}}
+{{block 'script'}}
+<script type="text/javascript">
+
+    var num = 2;
+    text.innerText = 3;
+    setInterval(function () {
+        var text = document.querySelector('#text')
+        text.innerText = num;
+        if (num == 0) {
+            location.href = '/admin/login';
+        }
+        num--
+    }, 1000)
+
+
+</script>
+{{/block}}
